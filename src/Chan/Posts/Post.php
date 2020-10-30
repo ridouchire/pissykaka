@@ -1,25 +1,84 @@
 <?php
 
-namespace PK\Database\Post;
+namespace PK\Chan\Posts;
 
 class Post
 {
+    /** @var int Коэффициент для расчёта оценки */
     private const COEFFICIENT = 1602370000;
+
+    /** @var int Идентификатор доски /b */
     private const BOARD_ID = 1;
+
+    /** @var string Стандартное имя постера */
     private const NAME = 'Anonymous';
 
+    /** @var Id Идентификатор*/
     private $id;
+
+    /** @var Poster Автор */
     private $poster;
+
+    /** @var Subject Тема */
     private $subject;
+
+    /** @var Message Сообщение */
     private $message;
+
+    /** @var Timestamp Время создания */
     private $timestamp;
+
+    /** @var BoardId Идентификатор доски */
     private $board_id;
+
+    /** @var ParentId Идентификатор родительского поста */
     private $parent_id;
+
+    /** @var UpdatedAt Время обновления */
     private $updated_at;
+
+    /** @var int Оценка */
     private $estimate;
 
-    public function __construct(int $id, string $poster, string $subject, string $message, int $timestamp, int $board_id, $parent_id, int $updated_at, int $estimate = 0)
+    public static function draft(int $board_id, string $message = '', $parent_id = null, string $subject = '', string $poster = '')
     {
+        return new self(
+            0,
+            empty($poster) ? self::NAME : $poster,
+            $subject,
+            $message,
+            time(),
+            $board_id,
+            $parent_id,
+            time(),
+            0
+        );
+    }
+
+    /**
+     * Post constructor
+     *
+     * @param int    $id         Идентификатор
+     * @param string $poster     Автор
+     * @param string $subject    Тема
+     * @param string $message    Сообщение
+     * @param int    $timestamp  Время создания
+     * @param int    $board_id   Идентификатор доски
+     * @param int    $parent_id  Идентификатор родительского поста
+     * @param int    $updated_at Время обновления
+     * @param int    $estimate   Оценка
+     */
+    public function __construct(
+        int $id,
+        string $poster,
+        string $subject,
+        string $message,
+        int $timestamp,
+        int $board_id,
+        $parent_id,
+        int $updated_at,
+        int $estimate = 0
+    ) {
         $this->id         = $id;
         $this->poster     = $poster;
         $this->subject    = $subject;
@@ -31,6 +90,13 @@ class Post
         $this->estimate   = $estimate;
     }
 
+    /**
+     * Создаёт пост из внешнего состояния
+     *
+     * @param array $state Список, содержащий поля поста и данные как его состояние
+     *
+     * @return self
+     */
     public static function fromState(array $state): self
     {
         return new self(
@@ -46,48 +112,28 @@ class Post
         );
     }
 
-    public function getId()
+    public function getId(): int
     {
-        if (!$this->id) {
-            throw new \RuntimeException('Пост ещё не был создан');
-        }
-
         return $this->id;
     }
 
     public function getPoster(): string
     {
-        if (!$this->poster) {
-            return 'Anonymous';
-        }
-
         return $this->poster;
     }
 
     public function getSubject(): string
     {
-        if (!$this->subject) {
-            return '';
-        }
-
         return $this->subject;
     }
 
     public function getMessage(): string
     {
-        if (!$this->message) {
-            return '';
-        }
-
         return $this->message;
     }
 
     public function getTimestamp(): int
     {
-        if (!$this->timestamp) {
-            return time();
-        }
-
         return $this->timestamp;
     }
 
@@ -106,6 +152,11 @@ class Post
         return $this->updated_at;
     }
 
+    /**
+     * Возвращает оценку поста
+     *
+     * @return int
+     */
     public function getEstimate(): int
     {
         if ($this->estimate !== 0) {
@@ -131,16 +182,26 @@ class Post
         return (int) $x;
     }
 
-    public function setEstimate(int $estimate): void
+    /**
+     * Увеличивает оценку
+     *
+     * @return void
+     */
+    public function bumpEstimate(): void
     {
-        $this->estimate = $estimate;
+        $this->estimate = $this->getEstimate() + 1;
     }
 
-    public function setUpdatedAt(int $timestamp): void
+    /**
+     * Обновляет время обновления
+     *
+     * @return void
+     */
+    public function bumpUpdatedAt(): void
     {
-        $this->updated_at = $timestamp;
+        $this->updated_at = time();
     }
-
+    
     public function toArray(): array
     {
         return [

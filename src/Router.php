@@ -12,13 +12,24 @@ use PK\Http\Response;
 
 class Router
 {
+    /** @var RouteCollector */
     private $route_collector;
 
+    /**
+     * Router constructor
+     */
     public function __construct()
     {
         $this->route_collector = new RouteCollector(new RouteParser(), new DataGenerator());
     }
 
+    /**
+     * Обрабатывает входящий запрос и запускает обработчики, соответствующие ему
+     *
+     * @param Request $req Входящий запрос
+     *
+     * @return Response
+     */
     public function handle(Request $req): Response
     {
         $dispatcher = new RouteDispatcher($this->route_collector->getData());
@@ -44,6 +55,17 @@ class Router
         }
     }
 
+    /**
+     * Добавляет обработчик маршрута
+     *
+     * @param string   $method   HTTP-метод
+     * @param string   $path     Маршрут 
+     * @param callable $callback Обработчик маршрута
+     *
+     * @throws InvalidArgumentException Если переданный обработчик не является вызываемым
+     *
+     * @return void
+     */
     public function addRoute(string $method, string $path, callable $callback): void
     {
         if (!is_callable($callback)) {

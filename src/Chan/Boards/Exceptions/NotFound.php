@@ -1,8 +1,8 @@
 <?php
 
-namespace PK\Exceptions\Board;
+namespace PK\Chan\Boards\Exceptions;
 
-class BoardNotFound extends \Exception
+class NotFound extends \Exception
 {
     protected $message = 'Доска не найдена';
 }

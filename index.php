@@ -1,51 +1,59 @@
 <?php
 
 use Medoo\Medoo;
+use PK\Router;
 use PK\Http\Request;
 use PK\Http\Response;
-use PK\Router;
-use PK\Application;
-use PK\Exceptions\Http\NotFound;
-use PK\Database\BoardRepository;
-use PK\Database\PostRepository;
-use PK\Controllers\BoardsFetcher;
-use PK\Controllers\PostFetcher;
-use PK\Controllers\PostCreator;
-use PK\Controllers\PostDeleter;
-use PK\Controllers\PostBoardFetcher;
-use PK\Controllers\FeedFetcher;
-use PK\Exceptions\Board\BoardNotFound;
-use PK\Exceptions\Post\PostNotFound;
+use PK\Database\Persistences\MysqlPersistence;
+use PK\Chan\Boards\Repository as BoardRepository;
+use PK\Chan\Posts\Repository as PostRepository;
+use PK\Chan\Boards\Controllers\GetAllBoards;
+use PK\Chan\Posts\Controllers\GetPost;
+use PK\Chan\Posts\Controllers\CreatePost;
+use PK\Chan\Posts\Controllers\CreateReply;
+use PK\Chan\Posts\Controllers\GetAllThreads;
 
 require_once "vendor/autoload.php";
 
+/** @var array */
 $config = require "config.php";
 
-$app = new Application($config);
+$persistence = new MysqlPersistence(
+    $config['db']['database'],
+    $config['db']['hostname'],
+    $config['db']['username'],
+    $config['db']['password']
+);
 
-$app['request'] = new Request($_SERVER, $_POST, $_FILES);
-$app['router'] = new Router();
+/** @var BoardRepository */
+$board_repo = new BoardRepository($persistence);
 
-$app['db'] = function ($app) {
-    return new Medoo([
-        'database_type' => 'mysql',
-        'database_name' => $app['config']['db']['database'],
-        'server' => $app['config']['db']['hostname'],
-        'username' => $app['config']['db']['username'],
-        'password' => $app['config']['db']['password'],
-        'charset' => 'utf8',
-        'collation' => 'utf8_unicode_ci'
-    ]);
-};
+/** @var PostRepository */
+$post_repo  = new PostRepository($persistence);
 
-$board_repo = new BoardRepository($app['db']);
-$post_repo  = new PostRepository($app['db']);
+/** @var Router */
+$router = new Router();
+$router->addRoute('GET', '/board/all', new GetAllBoards($board_repo)); // return list all boards
+$router->addRoute('GET', '/post/{id:[0-9]+}', new GetPost($post_repo)); // return thread and replies by post id
+$router->addRoute('GET', '/post/{tags}', new GetAllThreads($post_repo, $board_repo)); // return threads by board tag
+$router->addRoute('POST', '/post', new CreatePost($post_repo, $board_repo)); // create post
+$router->addRoute('POST', '/post/{id:[0-9]+}', new CreateReply($post_repo)); // create reply by post id
 
-$app['router']->addRoute('GET', '/board/all', new BoardsFetcher($board_repo, $app['db']));
-$app['router']->addRoute('GET', '/board/{tag}', new PostBoardFetcher($board_repo, $post_repo));
+/** @var Request */
+$req = new Request($_SERVER, $_POST, $_FILES);
 
-$app['router']->addRoute('GET', '/post/{id:[0-9]+}', new PostFetcher($post_repo));
-$app['router']->addRoute('POST', '/post', new PostCreator($post_repo, $board_repo));
-$app['router']->addRoute('DELETE', '/post/{id:[0-9]+}', new PostDeleter($post_repo));
+/** @var Response */
+$res = $router->handle($req);
 
-$app->run();
+if (PHP_SAPI !== 'cli') {
+    if (!empty($res->getHeaders())) {
+        foreach ($res->getHeaders() as $header) {
+            header($header);
+        }
+    }
+
+    http_response_code($res->getCode());
+}
+
+echo json_encode($res->getBody());
+exit(0);
