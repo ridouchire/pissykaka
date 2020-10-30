@@ -12,6 +12,7 @@ use PK\Chan\Posts\Controllers\GetPost;
 use PK\Chan\Posts\Controllers\CreatePost;
 use PK\Chan\Posts\Controllers\CreateReply;
 use PK\Chan\Posts\Controllers\GetAllThreads;
+use PK\Chan\Posts\Controllers\GetFeedPosts;
 
 require_once "vendor/autoload.php";
 
@@ -33,6 +34,7 @@ $post_repo  = new PostRepository($persistence);
 
 /** @var Router */
 $router = new Router();
+$router->addRoute('GET', '/feed', new GetFeedPosts($persistence)); // return latest posts from all boards exclude test board
 $router->addRoute('GET', '/board/all', new GetAllBoards($board_repo)); // return list all boards
 $router->addRoute('GET', '/post/{id:[0-9]+}', new GetPost($post_repo)); // return thread and replies by post id
 $router->addRoute('GET', '/post/{tags}', new GetAllThreads($post_repo, $board_repo)); // return threads by board tag
