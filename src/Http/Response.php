@@ -5,7 +5,7 @@ namespace PK\Http;
 class Response
 {
     /** @var string */
-    private const API_VERSION = '1.0.0';
+    private const API_VERSION = '2.0.0';
 
     /** @var array */
     private $data;
