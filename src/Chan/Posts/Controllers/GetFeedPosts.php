@@ -33,6 +33,7 @@ final class GetFeedPosts
                 'posts.subject',
                 'posts.message',
                 'posts.timestamp',
+                'posts.parent_id',
                 'boards.tag'
             ],
             [
